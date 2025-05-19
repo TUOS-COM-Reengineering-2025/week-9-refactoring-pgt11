@@ -6,7 +6,7 @@ class CustomerManager:
         self.discount_threshold = 500
 
     def add_customer(self, name, purchases):
-        if name in self.customers.keys():
+        if name in self.customers:
             self.customers[name].extend(purchases)
         else:
             self.customers[name] = purchases
@@ -17,39 +17,46 @@ class CustomerManager:
     def add_purchases(self, name, purchases):
         self.add_customer(name, purchases)
 
+    def _calculate_total_with_tax(self, purchases):
+        total = 0
+        for item in purchases:
+            price = item['price']
+            if price > self.tax_threshold:
+                total += price * (1 + self.tax_rate)
+            else:
+                total += price
+        return total
+
+    def _get_discount_label(self, total):
+        if total > self.discount_threshold:
+            return "Eligible for discount"
+        elif total > 300:
+            return "Potential future discount customer"
+        else:
+            return "No discount"
+
+    def _get_priority_label(self, total):
+        if total > 1000:
+            return "VIP Customer!"
+        elif total > 800:
+            return "Priority Customer"
+        return None
+
     def generate_report(self):
-        for y, x in self.customers.items():
-            a = 0
-            for z in x:
-                if z['price'] > self.tax_threshold:
-                    taxed_price = z['price'] * (1 + self.tax_rate)
-                    a += taxed_price
-                else:
-                    a += z['price']
-            print(y)
-            if a > self.discount_threshold:
-                print("Eligible for discount")
-            else:
-                if a > 300:
-                    print("Potential future discount customer")
-                else:
-                    print("No discount")
-            if a > 1000:
-                print("VIP Customer!")
-            else:
-                if a > 800:
-                    print("Priority Customer")
+        for customer_name, purchases in self.customers.items():
+            total = self._calculate_total_with_tax(purchases)
+            print(customer_name)
+            print(self._get_discount_label(total))
+            priority = self._get_priority_label(total)
+            if priority:
+                print(priority)
 
     def calculate_shipping_fee(self, purchases):
-        heavy_item = False
         for purchase in purchases:
             if purchase.get('weight', 0) > 20:
-                heavy_item = True
-                break
-        if heavy_item:
-            return 50
-        else:
-            return 20
+                return 50
+        return 20
+
 
 def calculate_shipping_fee_for_heavy_items(purchases):
     for purchase in purchases:
@@ -57,15 +64,12 @@ def calculate_shipping_fee_for_heavy_items(purchases):
             return 50
     return 20
 
+
 def calculate_shipping_fee_for_fragile_items(purchases):
-    fragile_item = False
     for purchase in purchases:
         if purchase.get('fragile', False):
-            fragile_item = True
-            break
-    if fragile_item:
-        return 60
-    else:
-        return 25
+            return 60
+    return 25
+
 
 flat_tax = 0.2
